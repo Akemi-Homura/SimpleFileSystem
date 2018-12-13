@@ -35,6 +35,7 @@ if (CMAKE_VERSION VERSION_LESS 2.8.11)
 endif ()
 
 include_directories(".")
+add_definitions(-D DEBUG_MODE_TESTING)
 
 set(DiskFSSrc
         src/diskfs/DiskPart.cpp

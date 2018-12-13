@@ -11,7 +11,9 @@ class Block : public DiskPart {
 public:
     Block(const char *path, int offset, int size);
 
-    Block(Block& rhs);
+    Block(const Block &rhs);
+
+    Block() = delete;
 
     ~Block();
 

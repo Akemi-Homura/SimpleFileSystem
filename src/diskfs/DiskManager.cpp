@@ -4,7 +4,7 @@
 
 #include "DiskManager.h"
 
-void DiskManager:: ReadFromDisk() {
+void DiskManager::ReadFromDisk() {
     if (super_ == nullptr) {
         super_ = new Super(path_, offset_);
     }
@@ -62,28 +62,16 @@ void DiskManager::Format(int block_size) {
     block_offset_ = inode_offset_ + block_bits * inode_size_;
 }
 
-Super DiskManager::super() {
-    return *super_;
-}
-
-Bitmap & DiskManager::block_bitmap() {
-    return *block_bitmap_;
-}
-
-Bitmap & DiskManager::inode_bitmap() {
-    return *inode_bitmap_;
-}
-
-Inode * DiskManager::inode(int n) {
-    auto res = new Inode(path_, inode_offset_ + (n - 1) * inode_size_) ;
-    res->ReadFromDisk();
+Inode DiskManager::inode(int n) {
+    Inode res(path_, inode_offset_ + (n - 1) * inode_size_);
+    res.ReadFromDisk();
 
     return res;
 }
 
-Block * DiskManager::block(int n) {
-    auto res = new Block(path_, block_offset_ + (n - 1) * super_->BlockSize(), super_->BlockSize());
-    res->ReadFromDisk();
+Block DiskManager::block(int n) {
+    Block res(path_, block_offset_ + (n - 1) * super_->BlockSize(), super_->BlockSize());
+    res.ReadFromDisk();
 
     return res;
 }

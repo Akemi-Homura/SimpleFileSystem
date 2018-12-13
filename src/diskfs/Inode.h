@@ -31,6 +31,8 @@ public:
 
     Inode(const char *path, int offset);
 
+    Inode() = delete;
+
     Model model_;
 };
 

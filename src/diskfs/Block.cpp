@@ -21,6 +21,6 @@ Block::~Block() {
     delete[] data_;
 }
 
-Block::Block(Block &rhs) : Block(rhs.path_, rhs.offset_, rhs.size_) {
+Block::Block(const Block &rhs) : Block(rhs.path_, rhs.offset_, rhs.size_) {
     memcpy(data_, rhs.data_, size_);
 }

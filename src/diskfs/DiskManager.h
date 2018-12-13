@@ -11,6 +11,12 @@
 #include "Inode.h"
 #include "Block.h"
 
+#ifdef DEBUG_MODE_TESTING
+
+#include "gtest/gtest_prod.h"
+
+#endif
+
 class DiskManager : public DiskPart {
 public:
     void ReadFromDisk() override;
@@ -19,29 +25,28 @@ public:
 
     DiskManager(const char *path, int offset);
 
-    DiskManager(const DiskManager& rhs);
+    DiskManager(const DiskManager &rhs);
 
     ~DiskManager();
 
     void Format(int block_size);
 
-    Super super();
+    Inode inode(int n);
 
-    Bitmap & block_bitmap();
-
-    Bitmap & inode_bitmap();
-
-    Inode * inode(int n);
-
-    Block * block(int n);
+    Block block(int n);
 
 private:
-    Super* super_;
-    Bitmap* block_bitmap_;
-    Bitmap* inode_bitmap_;
+    Super *super_;
+    Bitmap *block_bitmap_;
+    Bitmap *inode_bitmap_;
     int inode_offset_;
     int block_offset_;
     int inode_size_;
+#ifdef DEBUG_MODE_TESTING
+
+    FRIEND_TEST(DiskManagerFixture, DiskManagerTest);
+
+#endif
 };
 
 
