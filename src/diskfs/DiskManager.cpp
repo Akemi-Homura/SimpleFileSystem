@@ -4,91 +4,85 @@
 
 #include "DiskManager.h"
 
-void DiskManager::ReadFromDisk() {
-    if (super_ == nullptr) {
-        super_ = new Super(path_, offset_);
-    }
-    super_->ReadFromDisk();
-
-    if (inode_bitmap_ == nullptr) {
-        inode_bitmap_ = new Bitmap(path_, super_->offset() + super_->size(), super_->BlockSize());
-    }
-    inode_bitmap_->ReadFromDisk();
-
-    if (block_bitmap_ == nullptr) {
-        block_bitmap_ = new Bitmap(path_, inode_bitmap_->offset() + inode_bitmap_->size(), super_->BlockSize());
-    }
-    block_bitmap_->ReadFromDisk();
-
-
-    int block_bits = super_->BlockSize() * 8;
-    inode_offset_ = block_bitmap_->offset() + block_bitmap_->size();
-    block_offset_ = inode_offset_ + block_bits * inode_size_;
+int DiskManager::GetInodeOffset(int n) {
+    return inode_offset_ + (n - 1) * inode_size_;
 }
 
-void DiskManager::WriteToDisk() {
-    super_->WriteToDisk();
-    inode_bitmap_->WriteToDisk();
-    block_bitmap_->WriteToDisk();
+int DiskManager::GetBlockOffset(int n) {
+    return block_offset_ + (n - 1) * block_size_;
 }
 
-DiskManager::DiskManager(const char *path, int offset) : DiskPart(path, offset, 0) {
-    super_ = nullptr;
-    block_bitmap_ = inode_bitmap_ = nullptr;
-    inode_size_ = sizeof(Inode::Model);
+int DiskManager::GetBlockNum() const {
+    return block_num_;
+}
+
+int DiskManager::GetBlockSize() const {
+    return block_size_;
+}
+
+int DiskManager::GetInodeNum() const {
+    return inode_num_;
+}
+
+int DiskManager::GetSuperOffset() const {
+    return super_offset_;
+}
+
+int DiskManager::GetInodeBitmapOffset() const {
+    return inode_bitmap_offset_;
+}
+
+int DiskManager::GetBlockBitmapOffset() const {
+    return block_bitmap_offset_;
+}
+
+int DiskManager::GetInodeSize() const {
+    return inode_size_;
 }
 
 void DiskManager::Format(int block_size) {
     int block_bits = block_size * 8;
 
-    if (super_ == nullptr) {
-        super_ = new Super(path_, offset_);
+    block_num_ = block_bits;
+    inode_num_ = block_bits;
+    block_size_ = block_size;
+    inode_size_ = sizeof(Inode::Model);
+    super_offset_ = 0;
+    inode_bitmap_offset_ = super_offset_ + sizeof(Super::Model);
+    block_bitmap_offset_ = inode_bitmap_offset_ + block_size;
+    inode_offset_ = block_bitmap_offset_ + block_size;
+    block_offset_ = inode_offset_ + inode_num_ * inode_size_;
+}
+
+
+void DiskManager::InitializeFileSystem(const char *path) {
+    Super super(path, GetSuperOffset());
+    super.SetBlockNum(GetBlockNum());
+    super.SetInodeNum(GetInodeNum());
+    super.SetBlockSize(GetBlockSize());
+    super.WriteToDisk();
+
+    Bitmap inode_bitmap(path, GetInodeBitmapOffset(), GetBlockSize());
+    inode_bitmap.zero();
+    inode_bitmap.WriteToDisk();
+
+    Bitmap block_bitmap(path, GetBlockBitmapOffset(), GetBlockSize());
+    block_bitmap.zero();
+    block_bitmap.WriteToDisk();
+}
+
+void DiskManager::ReadFileSystemFromDisk(const char *path, int offset) {
+    Super super(path, offset);
+    super.ReadFromDisk();
+
+    Format(super.BlockSize());
+}
+
+DiskManager *DiskManager::sInstance = nullptr;
+
+DiskManager *DiskManager::GetInstance() {
+    if (sInstance == nullptr) {
+        sInstance = new DiskManager;
     }
-    super_->SetBlockNum(block_bits);
-    super_->SetInodeNum(block_bits);
-    super_->SetBlockSize(block_size);
-
-    if (inode_bitmap_ == nullptr) {
-        inode_bitmap_ = new Bitmap(path_, super_->offset() + super_->size(), block_size);
-    }
-    inode_bitmap_->zero();
-
-    if (block_bitmap_ == nullptr) {
-        block_bitmap_ = new Bitmap(path_, inode_bitmap_->offset() + inode_bitmap_->size(), block_size);
-    }
-    block_bitmap_->zero();
-
-    inode_offset_ = block_bitmap_->offset() + block_bitmap_->size();
-    block_offset_ = inode_offset_ + block_bits * inode_size_;
+    return sInstance;
 }
-
-Inode DiskManager::inode(int n) {
-    Inode res(path_, inode_offset_ + (n - 1) * inode_size_);
-    res.ReadFromDisk();
-
-    return res;
-}
-
-Block DiskManager::block(int n) {
-    Block res(path_, block_offset_ + (n - 1) * super_->BlockSize(), super_->BlockSize());
-    res.ReadFromDisk();
-
-    return res;
-}
-
-DiskManager::DiskManager(const DiskManager &rhs) : DiskPart(rhs.path_, rhs.offset_, rhs.size_) {
-    delete super_;
-    delete block_bitmap_;
-    delete inode_bitmap_;
-
-    super_ = new Super(*rhs.super_);
-    block_bitmap_ = new Bitmap(*rhs.block_bitmap_);
-    inode_bitmap_ = new Bitmap(*rhs.inode_bitmap_);
-}
-
-DiskManager::~DiskManager() {
-    delete super_;
-    delete block_bitmap_;
-    delete inode_bitmap_;
-}
-

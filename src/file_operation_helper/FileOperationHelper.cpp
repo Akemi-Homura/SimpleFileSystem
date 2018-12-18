@@ -29,3 +29,4 @@ void owrite(const char *path, void *buf, int size, int offset) {
     fsync(fd);
     close(fd);
 }
+

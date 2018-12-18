@@ -13,37 +13,37 @@ protected:
     virtual void SetUp() {
         srand(static_cast<unsigned int>(time(nullptr)));
         path = "disk";
-        manager = new DiskManager(path, 0);
     }
 
     virtual void TearDown() {
-        delete manager;
     }
-
-    DiskManager *manager;
 
     const char *path;
 };
 
 TEST_F(DiskManagerFixture, DiskManagerTest) {
+    DiskManager *manager = DiskManager::GetInstance();
     const int block_size = 4096;
     manager->Format(block_size);
+    manager->InitializeFileSystem(path);
 
     /** Inode Bitmap */
-    Bitmap &ib1 = *manager->inode_bitmap_;
+    Bitmap ib1(path, manager->GetInodeBitmapOffset(), manager->GetBlockSize());
     for (int i = 0; i < ib1.len(); i++) {
         ib1[i] = (rand() & 1) == 1;
     }
+    ib1.WriteToDisk();
 
     /** Block Bitmap */
-    Bitmap &bb1 = *manager->block_bitmap_;
+    Bitmap bb1(path, manager->GetBlockBitmapOffset(), manager->GetBlockSize());
     for (int i = 0; i < bb1.size(); i++) {
         bb1[i] = (rand() & 1) == 1;
     }
+    bb1.WriteToDisk();
 
     /** One Inode */
     const int inode_index = rand() % (block_size * 8);
-    Inode i1 = manager->inode(inode_index);
+    Inode i1(path, manager->GetInodeOffset(inode_index));
     strcpy(i1.model_.name_, "res.txt");
     i1.model_.size_ = rand();
     i1.model_.flag_ = (rand() & 1) == 1;
@@ -57,24 +57,26 @@ TEST_F(DiskManagerFixture, DiskManagerTest) {
 
     /** One block */
     const int block_index = rand() % (block_size * 8);
-    Block b1 = manager->block(block_index);
+    Block b1(path, manager->GetBlockOffset(block_index), manager->GetBlockSize());
     for (int i = 0; i < b1.size(); i++) {
         b1.data_[i] = (unsigned char) (rand() % 255);
     }
     b1.WriteToDisk();
 
-    manager->WriteToDisk();
-
+    Super sp1(path, manager->GetSuperOffset());
+    sp1.ReadFromDisk();
     /** Super */
-    DiskManager manager2(path, 0);
-    manager2.ReadFromDisk();
+    DiskManager *manager2 = DiskManager::GetInstance();
+    manager2->ReadFileSystemFromDisk(path);
 
-    EXPECT_EQ(manager->super_->BlockNum(), manager2.super_->BlockNum());
-    EXPECT_EQ(manager->super_->BlockSize(), manager2.super_->BlockSize());
-    EXPECT_EQ(manager->super_->InodeNum(), manager2.super_->InodeNum());
+    Super sp2(path, manager2->GetSuperOffset());
+    sp2.ReadFromDisk();
+    EXPECT_EQ(sp1.BlockNum(), sp2.BlockNum());
+    EXPECT_EQ(sp1.BlockSize(), sp2.BlockSize());
+    EXPECT_EQ(sp1.InodeNum(), sp2.InodeNum());
 
     /** Inode Bitmap */
-    Bitmap &ib2 = *manager2.inode_bitmap_;
+    Bitmap ib2(path, manager2->GetInodeBitmapOffset(), manager2->GetBlockSize());
     ASSERT_EQ(ib1.offset(), ib2.offset());
 
     ib2.ReadFromDisk();
@@ -83,7 +85,7 @@ TEST_F(DiskManagerFixture, DiskManagerTest) {
     }
 
     /** Block bitmap*/
-    Bitmap &bb2 = *manager2.block_bitmap_;
+    Bitmap bb2(path, manager2->GetBlockBitmapOffset(), manager2->GetBlockSize());
     ASSERT_EQ(bb1.offset(), bb2.offset());
 
     bb2.ReadFromDisk();
@@ -92,7 +94,7 @@ TEST_F(DiskManagerFixture, DiskManagerTest) {
     }
 
     /** One inode */
-    Inode i2 = manager2.inode(inode_index);
+    Inode i2(path, manager2->GetInodeOffset(inode_index));
     ASSERT_EQ(i1.offset(), i2.offset());
     i2.ReadFromDisk();
 
@@ -107,7 +109,7 @@ TEST_F(DiskManagerFixture, DiskManagerTest) {
     EXPECT_EQ(i1.model_.indirect_block_3_, i2.model_.indirect_block_3_);
 
     /** One block */
-    Block b2 = manager2.block(block_index);
+    Block b2(path, manager2->GetBlockOffset(block_index), manager2->GetBlockSize());
     ASSERT_EQ(b1.offset(), b2.offset());
     b2.ReadFromDisk();
     for (int i = 0; i < b2.size(); i++) {

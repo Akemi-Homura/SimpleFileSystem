@@ -11,43 +11,48 @@
 #include "Inode.h"
 #include "Block.h"
 
-#ifdef DEBUG_MODE_TESTING
-
-#include "gtest/gtest_prod.h"
-
-#endif
-
-class DiskManager : public DiskPart {
+class DiskManager {
 public:
-    void ReadFromDisk() override;
-
-    void WriteToDisk() override;
-
-    DiskManager(const char *path, int offset);
-
-    DiskManager(const DiskManager &rhs);
-
-    ~DiskManager();
 
     void Format(int block_size);
 
-    Inode inode(int n);
+    void InitializeFileSystem(const char *path);
 
-    Block block(int n);
+    void ReadFileSystemFromDisk(const char *path, int offset = 0);
+
+    int GetInodeOffset(int n);
+
+    int GetBlockOffset(int n);
+
+    int GetBlockNum() const;
+
+    int GetBlockSize() const;
+
+    int GetInodeNum() const;
+
+    int GetSuperOffset() const;
+
+    int GetInodeBitmapOffset() const;
+
+    int GetBlockBitmapOffset() const;
+
+    int GetInodeSize() const;
+
+    static DiskManager *GetInstance();
 
 private:
-    Super *super_;
-    Bitmap *block_bitmap_;
-    Bitmap *inode_bitmap_;
+    DiskManager() = default;
+
+    static DiskManager *sInstance;
+    int block_num_;
+    int block_size_;
+    int inode_num_;
+    int super_offset_;
+    int inode_bitmap_offset_;
+    int block_bitmap_offset_;
     int inode_offset_;
     int block_offset_;
     int inode_size_;
-#ifdef DEBUG_MODE_TESTING
-
-    FRIEND_TEST(DiskManagerFixture, DiskManagerTest);
-
-#endif
 };
-
 
 #endif //SIMPLEFILESYSTEM_DISKMANAGER_H
