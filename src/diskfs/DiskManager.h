@@ -20,6 +20,26 @@ public:
 
     void ReadFileSystemFromDisk(const char *path, int offset = 0);
 
+    int GetFreeInodeNum(const char *path);
+
+    bool IsBlockFree(const char *path, int n);
+
+    int GetFreeBlockNum(const char *path);
+
+    void OccupyInode(const char *path, int n);
+
+    int MallocBlock(const char*path);
+
+    int MallocInode(const char* path);
+
+    void ReleaseInode(const char *path, int n);
+
+    void OccupyBlock(const char *path, int n);
+
+    void ReleaseBlock(const char *path, int n);
+
+    int namei(const char *path, const char *filepath);
+
     int GetInodeOffset(int n);
 
     int GetBlockOffset(int n);
@@ -42,6 +62,8 @@ public:
 
 private:
     DiskManager() = default;
+    DiskManager(const DiskManager&);
+    DiskManager&operator=(const DiskManager&);
 
     static DiskManager *sInstance;
     int block_num_;

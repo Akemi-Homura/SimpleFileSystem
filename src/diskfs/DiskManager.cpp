@@ -2,14 +2,16 @@
 // Created by quals on 2018/12/11.
 //
 
+#include <src/interface/MDir.h>
+#include <stdexcept>
 #include "DiskManager.h"
 
 int DiskManager::GetInodeOffset(int n) {
-    return inode_offset_ + (n - 1) * inode_size_;
+    return inode_offset_ + n * inode_size_;
 }
 
 int DiskManager::GetBlockOffset(int n) {
-    return block_offset_ + (n - 1) * block_size_;
+    return block_offset_ + n * block_size_;
 }
 
 int DiskManager::GetBlockNum() const {
@@ -69,6 +71,10 @@ void DiskManager::InitializeFileSystem(const char *path) {
     Bitmap block_bitmap(path, GetBlockBitmapOffset(), GetBlockSize());
     block_bitmap.zero();
     block_bitmap.WriteToDisk();
+
+    OccupyInode(path, MDir::ROOT_DIR_INODE_NUM);
+    MDir root(path, MDir::ROOT_DIR_INODE_NUM);
+    root.Initialize(MDir::ROOT_DIR_INODE_NUM, MDir::ROOT_DIR_NAME);
 }
 
 void DiskManager::ReadFileSystemFromDisk(const char *path, int offset) {
@@ -86,3 +92,102 @@ DiskManager *DiskManager::GetInstance() {
     }
     return sInstance;
 }
+
+/**
+ * 根据文件路径查找inode节点编号，没有的话返回-1，步骤如下：
+ *
+ * @param path 文件路径
+ * @return inode节点编号
+ */
+int DiskManager::namei(const char *path, const char *filepath) {
+    const char *delim = "/";
+    int inode_num = MDir::ROOT_DIR_INODE_NUM;
+
+    if (filepath[0] != delim[0]) {
+        char msg[40];
+        sprintf(msg, "file path don't start with %s : %s", delim, filepath);
+        throw std::runtime_error(msg);
+    }
+
+    MDir root(path, inode_num);
+    auto items = root.GetDirItems();
+    for (int i = 2; i < items.size(); i++) {
+        if (strcmp(items[i].model_.name_, filepath + 1) == 0) {
+            return items[i].model_.inode_num_;
+        }
+    }
+
+    return -1;
+}
+
+int DiskManager::GetFreeInodeNum(const char *path) {
+    Bitmap inode_bitmap(path, inode_bitmap_offset_, block_size_);
+    inode_bitmap.ReadFromDisk();
+
+    for (int i = 0; i < inode_bitmap.len(); i++) {
+        if (!inode_bitmap[i]) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+int DiskManager::GetFreeBlockNum(const char *path) {
+    Bitmap block_bitmap(path, block_bitmap_offset_, block_size_);
+    block_bitmap.ReadFromDisk();
+    for (int i = 0; i < block_bitmap.len(); i++) {
+        if (!block_bitmap[i]) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+void DiskManager::OccupyInode(const char *path, int n) {
+    Bitmap inode_bitmap(path, inode_bitmap_offset_, block_size_);
+    inode_bitmap.ReadFromDisk();
+    inode_bitmap[n] = true;
+    inode_bitmap.WriteToDisk();
+}
+
+void DiskManager::ReleaseInode(const char *path, int n) {
+    Bitmap inode_bitmap(path, inode_bitmap_offset_, block_size_);
+    inode_bitmap.ReadFromDisk();
+    inode_bitmap[n] = false;
+    inode_bitmap.WriteToDisk();
+}
+
+void DiskManager::OccupyBlock(const char *path, int n) {
+    Bitmap block_bitmap(path, block_bitmap_offset_, block_size_);
+    block_bitmap.ReadFromDisk();
+    block_bitmap[n] = true;
+    block_bitmap.WriteToDisk();
+}
+
+
+void DiskManager::ReleaseBlock(const char *path, int n) {
+    Bitmap block_bitmap(path, block_bitmap_offset_, block_size_);
+    block_bitmap.ReadFromDisk();
+    block_bitmap[n] = false;
+    block_bitmap.WriteToDisk();
+}
+
+int DiskManager::MallocBlock(const char *path) {
+    int free_block_num = GetFreeBlockNum(path);
+    OccupyBlock(path, free_block_num);
+    return free_block_num;
+}
+
+int DiskManager::MallocInode(const char *path) {
+    int free_inode_num = GetFreeInodeNum(path);
+    OccupyInode(path, free_inode_num);
+    return free_inode_num;
+}
+
+bool DiskManager::IsBlockFree(const char *path, int n) {
+    Bitmap block_bitmap(path, block_bitmap_offset_, block_size_);
+    block_bitmap.ReadFromDisk();
+    return !block_bitmap[n];
+}
+
+

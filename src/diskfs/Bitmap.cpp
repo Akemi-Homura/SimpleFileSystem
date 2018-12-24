@@ -4,6 +4,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <stdexcept>
 #include "Bitmap.h"
 #include "src/file_operation_helper/FileOperationHelper.h"
 
@@ -58,7 +59,7 @@ void Bitmap::CheckIndex(int n) const {
     static char msg[50];
     if (n > len_) {
         sprintf(msg, "%d over range of %d", n, len_);
-        throw std::range_error(msg);
+        throw std::runtime_error(msg);
     }
 }
 

@@ -21,6 +21,8 @@ public:
 
     void WriteToDisk() override;
 
+    void Initialize();
+
     unsigned char *data_;
 };
 

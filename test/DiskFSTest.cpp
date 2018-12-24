@@ -46,7 +46,6 @@ TEST_F(DiskManagerFixture, DiskManagerTest) {
     Inode i1(path, manager->GetInodeOffset(inode_index));
     strcpy(i1.model_.name_, "res.txt");
     i1.model_.size_ = rand();
-    i1.model_.flag_ = (rand() & 1) == 1;
     i1.model_.type_ = Inode::kNormal;
     for (int i = 0; i < 12; i++) {
         i1.model_.direct_block_[i] = rand();
@@ -100,7 +99,6 @@ TEST_F(DiskManagerFixture, DiskManagerTest) {
 
     EXPECT_EQ(0, strcmp(i1.model_.name_, i2.model_.name_));
     EXPECT_EQ(i1.model_.type_, i2.model_.type_);
-    EXPECT_EQ(i1.model_.flag_, i2.model_.flag_);
     EXPECT_EQ(i1.model_.size_, i2.model_.size_);
     for (int i = 0; i < 12; i++) {
         EXPECT_EQ(i1.model_.direct_block_[i], i2.model_.direct_block_[i]);
@@ -125,7 +123,6 @@ TEST_F(DiskManagerFixture, InodeTest) {
     Inode i1(path, offset);
     strcpy(i1.model_.name_, "res.txt");
     i1.model_.size_ = rand();
-    i1.model_.flag_ = (rand() & 1) == 1;
     i1.model_.type_ = Inode::kNormal;
     for (int i = 0; i < 12; i++) {
         i1.model_.direct_block_[i] = rand();
@@ -139,7 +136,6 @@ TEST_F(DiskManagerFixture, InodeTest) {
 
     EXPECT_EQ(0, strcmp(i1.model_.name_, i2.model_.name_));
     EXPECT_EQ(i1.model_.type_, i2.model_.type_);
-    EXPECT_EQ(i1.model_.flag_, i2.model_.flag_);
     EXPECT_EQ(i1.model_.size_, i2.model_.size_);
     for (int i = 0; i < 12; i++) {
         EXPECT_EQ(i1.model_.direct_block_[i], i2.model_.direct_block_[i]);
@@ -151,7 +147,6 @@ TEST_F(DiskManagerFixture, InodeTest) {
     Inode i3(i1);
     EXPECT_EQ(0, strcmp(i1.model_.name_, i3.model_.name_));
     EXPECT_EQ(i1.model_.type_, i3.model_.type_);
-    EXPECT_EQ(i1.model_.flag_, i3.model_.flag_);
     EXPECT_EQ(i1.model_.size_, i3.model_.size_);
     for (int i = 0; i < 12; i++) {
         EXPECT_EQ(i1.model_.direct_block_[i], i3.model_.direct_block_[i]);
@@ -182,6 +177,15 @@ TEST_F(DiskManagerFixture, BitmapTest) {
     Bitmap b3(bitmap);
     for (int i = 0; i < size; i++) {
         EXPECT_EQ(bitmap[i], b3[i]);
+    }
+
+    /** zero method **/
+    b3.zero();
+    b3.WriteToDisk();
+
+    b2.ReadFromDisk();
+    for(int i=0;i<size;i++){
+        EXPECT_FALSE(b2[i]);
     }
 }
 

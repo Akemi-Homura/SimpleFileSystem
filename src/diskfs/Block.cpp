@@ -3,6 +3,7 @@
 //
 
 #include "Block.h"
+#include <cstring>
 #include "src/file_operation_helper/FileOperationHelper.h"
 
 void Block::ReadFromDisk() {
@@ -22,5 +23,10 @@ Block::~Block() {
 }
 
 Block::Block(const Block &rhs) : Block(rhs.path_, rhs.offset_, rhs.size_) {
-    memcpy(data_, rhs.data_, size_);
+    std::memcpy(data_, rhs.data_, (size_t)size_);
+}
+
+void Block::Initialize() {
+    std::memset(data_, 0, (size_t)size_);
+    WriteToDisk();
 }

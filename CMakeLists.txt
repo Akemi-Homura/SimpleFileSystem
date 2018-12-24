@@ -48,6 +48,11 @@ set(DiskFSSrc
 set(ExceptionSrc
         src/exception/ExceptionHelper.cpp)
 
+set(InterfaceSrc
+        src/interface/MFile.cpp
+        src/interface/MDir.cpp
+        src/interface/FSInterface.cpp)
+
 set(FileOperationSrc
         src/file_operation_helper/FileOperationHelper.cpp)
 
@@ -55,15 +60,23 @@ add_executable(DiskFSTest
         ${DiskFSSrc}
         ${ExceptionSrc}
         ${FileOperationSrc}
+        ${InterfaceSrc}
         test/DiskFSTest.cpp)
 
+add_executable(InterfaceTest
+        ${DiskFSSrc}
+        ${ExceptionSrc}
+        ${FileOperationSrc}
+        ${InterfaceSrc}
+        test/InterfaceTest.cpp)
 
 add_executable(SimpleFileSystem
         src/main.cc
         )
 
 set(TESTS
-        DiskFSTest;)
+        DiskFSTest;
+        InterfaceTest)
 
 foreach (x ${TESTS})
     target_link_libraries(${x} gtest_main)
