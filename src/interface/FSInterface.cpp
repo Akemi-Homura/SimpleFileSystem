@@ -25,7 +25,7 @@ int FSInterface::Open(const char *filepath, int flag) {
 
     int inode_num = manager->namei(path_, filepath);
     if (inode_num != -1) {
-        Inode inode(path_, inode_num);
+        Inode inode(path_, manager->GetInodeOffset(inode_num));
         inode.ReadFromDisk();
         if (HasTrunc(flag)) {
             inode.Trunc();
@@ -36,11 +36,11 @@ int FSInterface::Open(const char *filepath, int flag) {
     } else {
         if (HasCreat(flag)) {
             inode_num = manager->MallocInode(path_);
-            Inode inode(path_, inode_num);
-            inode.Initialize(filepath, Inode::kNormal);
+            Inode inode(path_, manager->GetInodeOffset(inode_num));
+            inode.Initialize(filepath + 1, Inode::kNormal);
 
             MDir root(path_, MDir::ROOT_DIR_INODE_NUM);
-            root.Insert(filepath, inode_num);
+            root.Insert(filepath + 1, inode_num);
         } else {
             error_msg_ = "Open file failed, file not exist: ";
             error_msg_.append(filepath);
@@ -61,27 +61,27 @@ FSInterface::FSInterface() {
 }
 
 bool FSInterface::HasRDONLY(int flag) {
-    return (flag & O_RDONLY) == O_RDONLY;
+    return (flag & O_RDONLY) != 0;
 }
 
 bool FSInterface::HasWRONLY(int flag) {
-    return (flag & O_WRONLY) == O_WRONLY;
+    return (flag & O_WRONLY) != 0;
 }
 
 bool FSInterface::HasRDWR(int flag) {
-    return (flag & O_RDWR) == O_RDWR;
+    return (flag & O_RDWR) != 0;
 }
 
 bool FSInterface::HasCreat(int flag) {
-    return (flag & O_CREAT) == O_CREAT;
+    return (flag & O_CREAT) != 0;
 }
 
 bool FSInterface::HasTrunc(int flag) {
-    return (flag & O_TRUNC) == O_TRUNC;
+    return (flag & O_TRUNC) != 0;
 }
 
 bool FSInterface::HasAppend(int flag) {
-    return (flag & O_APPEND) == O_APPEND;
+    return (flag & O_APPEND) != 0;
 }
 
 void FSInterface::SetPath(const char *path) {
@@ -152,11 +152,16 @@ const char *FSInterface::GetErrorMsg() {
 }
 
 int FSInterface::Unlink(const char *pathname) {
+    if (pathname[0] != MDir::ROOT_DIR_NAME[0]) {
+        error_msg_ = "unlink failed, file not exist: ";
+        error_msg_.append(pathname);
+        return -1;
+    }
     MDir root(path_, MDir::ROOT_DIR_INODE_NUM);
-    int res = root.Remove(pathname);
+    int res = root.Remove(pathname + 1);
     if (res == -1) {
         error_msg_ = "Unlink failed, file not exist: ";
-        error_msg_.append(pathname);
+        error_msg_.append(pathname + 1);
     }
     return res;
 }

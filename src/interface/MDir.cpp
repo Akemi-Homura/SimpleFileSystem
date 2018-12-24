@@ -74,13 +74,24 @@ std::vector<MDir::DirItem> MDir::GetDirItems() {
 
 int MDir::Remove(const char *name) {
     auto items = GetDirItems();
+    int res = -1;
     for (auto it = items.begin(); it != items.end(); it++) {
-        if (strcmp(name,it->model_.name_) == 0){
+        if (strcmp(name, it->model_.name_) == 0) {
             items.erase(it);
-            return 0;
+            res = 0;
+            break;
         }
     }
-    return -1;
+
+    if (res == 0) {
+        Inode inode(path, manager->GetInodeOffset(inode_num_));
+        inode.Initialize(items[1].model_.name_, Inode::kDirectory);
+
+        for (int i = 0; i < items.size(); i++) {
+            Insert(items[i]);
+        }
+    }
+    return res;
 }
 
 MDir::DirItem::DirItem(const char *name, int inode_num) {
