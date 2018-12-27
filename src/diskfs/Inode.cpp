@@ -33,7 +33,7 @@ int Inode::WriteData2Block(const void *buf, int size, int offset) {
         Block block(path_, manager->GetBlockOffset(index), block_size);
         block.ReadFromDisk();
 
-        std::memcpy(block.data_ + block_offset, (char *) buf + already_write_size, (size_t) size_need_write);
+        memcpy(block.data_ + block_offset, (char *) buf + already_write_size, (size_t) size_need_write);
         block.WriteToDisk();
 
         already_write_size += size_need_write;
@@ -59,7 +59,7 @@ int Inode::ReadDataFromBlock(void *buf, int size, int offset) {
         Block block(path_, manager->GetBlockOffset(index), block_size);
         block.ReadFromDisk();
 
-        std::memcpy((char *) buf + already_read_size, block.data_ + block_offset, (size_t) size_need_read);
+        memcpy((char *) buf + already_read_size, block.data_ + block_offset, (size_t) size_need_read);
 
         already_read_size += size_need_read;
         size -= size_need_read;
@@ -146,7 +146,7 @@ int Inode::GetBlockIndex(int block_num) {
 }
 
 void Inode::Initialize(const char *name, Inode::FileType type) {
-    std::strcpy(model_.name_, name);
+    strcpy(model_.name_, name);
     model_.size_ = 0;
     model_.type_ = type;
     for (int i = 0; i < DIRECT_BLOCK_NUM; i++) {

@@ -95,7 +95,7 @@ int MDir::Remove(const char *name) {
 }
 
 MDir::DirItem::DirItem(const char *name, int inode_num) {
-    std::strcpy(model_.name_, name);
+    strcpy(model_.name_, name);
     model_.inode_num_ = inode_num;
 }
 

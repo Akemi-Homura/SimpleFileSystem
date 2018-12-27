@@ -4,6 +4,7 @@
 
 #include <src/interface/MDir.h>
 #include <stdexcept>
+#include <string.h>
 #include "DiskManager.h"
 
 int DiskManager::GetInodeOffset(int n) {

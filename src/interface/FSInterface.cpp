@@ -3,7 +3,7 @@
 //
 
 #include "FSInterface.h"
-
+#include <string.h>
 #include "MDir.h"
 #include "MFile.h"
 

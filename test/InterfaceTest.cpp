@@ -34,8 +34,8 @@ TEST_F(InterfaceFixture, InterfaceTest) {
     const char *filename1 = "/test.txt";
     const char *msg1 = "Hello World";
     const char *msg2 = "NDSL Homework";
-    const int msg_size1 = (int) std::strlen(msg1) + 1;
-    const int msg_size2 = (int) std::strlen(msg2) + 1;
+    const int msg_size1 = (int) strlen(msg1) + 1;
+    const int msg_size2 = (int) strlen(msg2) + 1;
 
     /* open first file */
     int fd = interface->Open(filename1, FSInterface::O_WRONLY | FSInterface::O_CREAT);
@@ -170,7 +170,7 @@ TEST_F(InterfaceFixture, InodeTest) {
 
 TEST_F(InterfaceFixture, BigMFile) {
     const char *msg = "Hello World";
-    const int msg_size = (int) std::strlen(msg) + 1;
+    const int msg_size = (int) strlen(msg) + 1;
     const int block_num = Inode::DIRECT_BLOCK_NUM + block_size / Inode::BLOCK_INDEX_SIZE;
     const int write_times = 1000;
 
@@ -219,7 +219,7 @@ TEST_F(InterfaceFixture, SmallMFile) {
     MFile f1(path, inode_num);
     f1.Initialize(MDir::ROOT_DIR_INODE_NUM, "test.txt");
     const char *msg = "Hello World";
-    const int msg_size = (int) std::strlen(msg) + 1;
+    const int msg_size = (int) strlen(msg) + 1;
     f1.Write(msg, msg_size);
 
     char content[20];
